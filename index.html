@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Outreach Bot</title>
+<title>Barrierefrei-Finder</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23FF6B00'/%3E%3Ctext x='16' y='23' font-size='18' text-anchor='middle' font-family='sans-serif'%3E🚀%3C/text%3E%3C/svg%3E">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -324,8 +324,8 @@ tr.data-row:hover .ra-wrap{opacity:1;}
 <body>
 
 <div id="tb">
-  <div class="logo">meshminds3d</div>
-  <span class="logo-sub">Outreach Bot</span>
+  <div class="logo">Barrierefrei</div>
+  <span class="logo-sub">Compliance Finder</span>
   <div class="tsep"></div>
   <span class="tb-proj" id="tbProj">Select a project</span>
   <div class="sp"></div>
@@ -1140,7 +1140,9 @@ function openSettings(){
     '<div class="sp-sec">Batch</div>',
     field('Emails per chunk','<select id="sp-bsize">'+[3,5,10,20].map(n=>'<option value="'+n+'"'+((p.batchSize||5)===n?' selected':'')+'>'+n+'</option>').join('')+'</select>','Send this many, then pause'),
     field('Delay between chunks (min)','<input id="sp-bdelay" type="number" min="1" max="60" value="'+(p.batchDelay||5)+'">'),
-    '<div class="sp-sec">Criteria</div>',
+    '<div class="sp-sec">Zielkritierien</div>',
+    '<div class="fld"><label>Mitarbeiter (mind.)</label><div class="crit-wrap">'+['10+','20+','50+','100+','250+','500+'].map(s=>'<div class="crit-pill'+(cr.minEmployees===s?' on':'')+'" onclick="setSingleCrit(this,\'minEmployees\',\''+s+'\')">'+s+'</div>').join('')+'</div><div style="font-size:10px;color:var(--g5);margin-top:3px">Ab 20 Mitarbeiter gilt das Barrierefreiheitsstärkungsgesetz (BFSG)</div></div>',
+    '<div class="fld"><label>Ungef. Jahresumsatz</label><div class="crit-wrap">'+['bis 250K','250K–1M','1M–5M','5M–20M','20M+'].map(s=>'<div class="crit-pill'+(cr.revenueRange===s?' on':'')+'" onclick="setSingleCrit(this,\'revenueRange\',\''+s+'\')">'+s+'</div>').join('')+'</div></div>',
     '<div class="fld"><label>Company Size</label><div class="crit-wrap">'+sizes.map(s=>'<div class="crit-pill'+((cr.companySize||[]).includes(s)?' on':'')+'" onclick="toggleCrit(this,\'companySize\',\''+s+'\')">'+s+'</div>').join('')+'</div></div>',
     '<div class="fld"><label>Business Type</label><div class="crit-wrap">'+['brand','manufacturer','shop','software','marketplace'].map(t=>'<div class="crit-pill'+((cr.businessType||[]).includes(t)?' on':'')+'" onclick="toggleCrit(this,\'businessType\',\''+t+'\')">'+t+'</div>').join('')+'</div></div>',
     field('Ships To','<input id="sp-ships" value="'+esc(cr.shipsTo||'Europe')+'">'),
@@ -1156,6 +1158,7 @@ function openSettings(){
 }
 function ensureCritState(){ const p=curProj(); if(!p) return; if(!_critState[p.id]) _critState[p.id]=JSON.parse(JSON.stringify(p.criteria||{})); }
 function toggleCrit(el,f,val){ ensureCritState(); const p=curProj(); let arr=_critState[p.id][f]=_critState[p.id][f]||[]; if(arr.includes(val)){ arr.splice(arr.indexOf(val),1); el.classList.remove('on'); } else{ arr.push(val); el.classList.add('on'); } }
+function setSingleCrit(el,f,val){ ensureCritState(); const p=curProj(); el.closest('.crit-wrap').querySelectorAll('.crit-pill').forEach(e=>e.classList.remove('on')); if(_critState[p.id][f]===val){ _critState[p.id][f]=null; } else{ _critState[p.id][f]=val; el.classList.add('on'); } }
 function pickIcon(el,ic){ document.querySelectorAll('#sp-ip .ip-o').forEach(e=>e.classList.remove('sel')); el.classList.add('sel'); document.getElementById('sp-icon').value=ic; }
 function saveSettings(){
   const p=curProj(); if(!p) return;
@@ -1199,7 +1202,7 @@ function pickModalIcon(el,ic){ document.querySelectorAll('#ov .ip-o').forEach(e=
 function addProject(){
   const name=(document.getElementById('np-name').value||'').trim(); if(!name){ toast('Name required','err'); return; }
   const id=name.toLowerCase().replace(/\s+/g,'-')+'-'+Date.now();
-  projects.push({id,name,icon:_newIcon,keywords:(document.getElementById('np-kw').value||'').split('\n').map(s=>s.trim()).filter(Boolean),location:(document.getElementById('np-loc').value||'').trim()||'Europe',criteria:{companySize:['small','medium'],businessType:['brand'],collab:false,shipsTo:'Europe',hasSocial:false,avoidKeywords:[],language:['en']},emailBrief:(document.getElementById('np-brief').value||'').trim(),followUpBrief:'',batchSize:5,batchDelay:5,maxLeads:10,minScore:5});
+  projects.push({id,name,icon:_newIcon,keywords:(document.getElementById('np-kw').value||'').split('\n').map(s=>s.trim()).filter(Boolean),location:(document.getElementById('np-loc').value||'').trim()||'Deutschland',criteria:{companySize:['small','medium'],businessType:['brand'],collab:false,shipsTo:'Europe',hasSocial:false,avoidKeywords:[],language:['de'],minEmployees:'20+',revenueRange:null},emailBrief:(document.getElementById('np-brief').value||'').trim(),followUpBrief:'',batchSize:5,batchDelay:5,maxLeads:10,minScore:5});
   saveProjects(); contacts[id]=[]; renderSidebar(); closeModal(); selectProject(id); toast('"'+name+'" created','ok');
 }
 
