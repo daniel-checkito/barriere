@@ -3,22 +3,22 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BFSG Scout – Compliance Lead Finder</title>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231a3d6b'/%3E%3Ctext x='16' y='22' font-size='14' text-anchor='middle' font-family='sans-serif' font-weight='bold' fill='white'%3EBFSG%3C/text%3E%3C/svg%3E">
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<title>Barriere Consulting | BFSG Compliance</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='4' fill='%230d1f3c'/%3E%3Ctext x='16' y='21' font-size='11' text-anchor='middle' font-family='Georgia%2C serif' font-weight='bold' fill='white' letter-spacing='1'%3EBC%3C/text%3E%3C/svg%3E">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
 :root{
-  --or:#1a3d6b;--or2:#2b5fa8;--bk:#0f1923;
-  --g1:#f0f3f7;--g2:#dde3ec;--g3:#b0bbc9;--g5:#6b7a90;--g7:#2c3a4d;
-  --green:#16a34a;--red:#dc2626;--blue:#2563eb;--purple:#7c3aed;
-  --top-h:56px;
+  --or:#0d1f3c;--or2:#1a3560;--bk:#0a1628;
+  --g1:#f2f4f7;--g2:#dce1ea;--g3:#aab4c4;--g5:#6b7a90;--g7:#2c3a4d;
+  --green:#15803d;--red:#b91c1c;--blue:#1d4ed8;--purple:#6d28d9;
+  --top-h:58px;
 }
 html,body{height:100%;overflow:hidden;font-family:'DM Sans',sans-serif;background:var(--g1);color:var(--bk);}
 /* TOPBAR */
-#tb{position:fixed;top:0;left:0;right:0;height:var(--top-h);background:var(--or);border-bottom:none;display:flex;align-items:center;padding:0 18px;gap:10px;z-index:200;box-shadow:0 2px 12px rgba(26,61,107,.25);}
-.logo{font-family:'Bebas Neue';font-size:22px;letter-spacing:3px;color:#fff;}
-.logo-sub{font-size:9px;color:rgba(255,255,255,.6);font-weight:700;letter-spacing:1.5px;text-transform:uppercase;}
+#tb{position:fixed;top:0;left:0;right:0;height:var(--top-h);background:var(--or);border-bottom:2px solid rgba(255,255,255,.06);display:flex;align-items:center;padding:0 20px;gap:12px;z-index:200;box-shadow:0 4px 20px rgba(0,0,0,.35);}
+.logo{font-family:'Playfair Display',Georgia,serif;font-size:17px;font-weight:700;letter-spacing:.5px;color:#fff;line-height:1.1;}
+.logo-sub{font-size:9px;color:rgba(255,255,255,.45);font-weight:600;letter-spacing:2px;text-transform:uppercase;}
 .tsep{width:1px;height:20px;background:rgba(255,255,255,.2);flex-shrink:0;}
 .sp{flex:1;}
 .tb-proj{font-size:12px;font-weight:700;color:rgba(255,255,255,.75);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
@@ -75,7 +75,7 @@ html,body{height:100%;overflow:hidden;font-family:'DM Sans',sans-serif;backgroun
 /* project header */
 #projHeader{padding:10px 14px 9px;border-bottom:1.5px solid var(--g2);background:#fff;flex-shrink:0;display:flex;align-items:center;gap:10px;}
 .ph-info{flex:1;min-width:0;}
-.ph-name{font-family:'Bebas Neue';font-size:20px;letter-spacing:2.5px;line-height:1.1;color:var(--or);}
+.ph-name{font-family:'Playfair Display',Georgia,serif;font-size:18px;font-weight:700;letter-spacing:.2px;line-height:1.2;color:var(--or);}
 .ph-sub{font-size:10px;color:var(--g5);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 /* progress */
 .prog-wrap{padding:0 14px 7px;background:#fff;border-bottom:1px solid var(--g2);flex-shrink:0;}
@@ -87,7 +87,7 @@ html,body{height:100%;overflow:hidden;font-family:'DM Sans',sans-serif;backgroun
 /* kpi bar */
 .kpi-bar{display:flex;gap:6px;padding:8px 14px;border-bottom:1px solid var(--g2);background:#fafafa;flex-shrink:0;}
 .kpi{flex:1;background:#fff;border:1.5px solid var(--g2);border-radius:7px;padding:6px 8px;text-align:center;}
-.kpi .kv{font-size:18px;font-weight:800;font-family:'Bebas Neue';letter-spacing:1px;line-height:1.1;}
+.kpi .kv{font-size:20px;font-weight:800;font-family:'DM Sans',sans-serif;letter-spacing:-.5px;line-height:1.1;}
 .kpi .kl{font-size:9px;font-weight:700;letter-spacing:.5px;color:var(--g5);text-transform:uppercase;margin-top:1px;}
 .kpi.hi .kv{color:var(--or);}
 .kpi.gr .kv{color:var(--green);}
@@ -264,7 +264,7 @@ tr.data-row:hover .ra-wrap{opacity:1;}
 .modal{background:#fff;border-radius:12px;width:520px;max-height:88vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,.16);}
 .modal.wide{width:680px;}
 .mhd{padding:14px 16px;border-bottom:1px solid var(--g2);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
-.mhd h3{font-family:'Bebas Neue';font-size:17px;letter-spacing:2px;}
+.mhd h3{font-family:'Playfair Display',Georgia,serif;font-size:17px;font-weight:700;letter-spacing:.1px;}
 .mhd-sub{font-size:11px;color:var(--g5);margin-top:1px;}
 .mb{padding:14px 16px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;flex:1;}
 .mb::-webkit-scrollbar{width:3px;}
@@ -315,8 +315,8 @@ tr.data-row:hover .ra-wrap{opacity:1;}
 <body>
 
 <div id="tb">
-  <div class="logo">BFSG Scout</div>
-  <span class="logo-sub">Compliance Lead Finder</span>
+  <div class="logo">Barriere Consulting</div>
+  <span class="logo-sub">BFSG Compliance · Deutschland</span>
   <div class="tsep"></div>
   <span class="tb-proj" id="tbProj">Kampagne auswählen</span>
   <div class="sp"></div>
@@ -483,13 +483,13 @@ let _isSending    = false; // prevent double-batch
 
 function defaultProjects(){
   return [{
-    id:'bfsg-shopify-de',name:'Shopify – Deutschland',icon:'🏢',
-    keywords:['Shopify Shop Deutschland','Online Shop Deutschland Shopify','deutsche Shopify Händler Barrierefreiheit','Shopify Store Deutschland Mittelstand'],
+    id:'mittelstand-shopify-de',name:'Shopify Mittelstand DE',icon:'🏢',
+    keywords:['Shopify Online Shop Mittelstand Deutschland','mittelständischer Händler Shopify Deutschland','B2B Online Shop Shopify Deutschland 50 Mitarbeiter','Shopify Händler Deutschland Barrierefreiheit BFSG'],
     location:'Deutschland',
-    criteria:{shopSystem:['Shopify'],minEmployees:'20+',revenueRange:'1M–5M',avoidKeywords:['Kleinunternehmen','Einzelperson']},
-    emailBrief:"Sehr geehrte Damen und Herren,\n\nab dem 28. Juni 2025 verpflichtet das Barrierefreiheitsstärkungsgesetz (BFSG) alle Unternehmen mit mehr als 20 Mitarbeitern, ihre Online-Shops barrierefrei zu gestalten.\n\nWir unterstützen Shopify-Händler dabei, diese gesetzliche Anforderung effizient und rechtssicher umzusetzen – von der Analyse bis zur Zertifizierung.\n\nGerne senden wir Ihnen unverbindlich eine erste Einschätzung Ihres aktuellen Shop-Status zu.\n\nMit freundlichen Grüßen",
-    followUpBrief:"Sehr geehrte Damen und Herren,\n\nihre Frist zur BFSG-Konformität rückt näher. Gerne unterstützen wir Sie dabei, alle gesetzlichen Anforderungen rechtzeitig zu erfüllen. Darf ich Ihnen ein kurzes Gespräch anbieten?",
-    batchSize:5,batchDelay:5,maxLeads:20,minScore:5
+    criteria:{shopSystem:['Shopify'],minEmployees:'50+',revenueRange:'5M–20M',avoidKeywords:['Kleinunternehmen','Einzelperson','Startup']},
+    emailBrief:"Sehr geehrte Damen und Herren,\n\nab dem 28. Juni 2025 sind mittelständische Unternehmen mit Online-Shops gesetzlich verpflichtet, ihre digitalen Angebote barrierefrei zu gestalten – geregelt im Barrierefreiheitsstärkungsgesetz (BFSG).\n\nVerstöße können zu Abmahnungen und Bußgeldern führen. Wir prüfen Ihren Shopify-Shop kostenfrei auf BFSG-Konformität und begleiten die rechtssichere Umsetzung.\n\nGerne senden wir Ihnen innerhalb von 48 Stunden einen unverbindlichen Prüfbericht zu.\n\nMit freundlichen Grüßen\nBarriere Consulting",
+    followUpBrief:"Sehr geehrte Damen und Herren,\n\ndie Übergangsfrist für BFSG-Konformität läuft. Darf ich fragen, ob Sie Ihren Shop bereits geprüft haben? Eine kostenfreie Erstanalyse dauert nur wenige Minuten – ich freue mich, Ihnen dabei zu helfen.",
+    batchSize:5,batchDelay:8,maxLeads:20,minScore:6
   }];
 }
 
@@ -1105,7 +1105,7 @@ function openSettings(){
     field('Mindest-Score (1–10)','<input id="sp-score" type="number" min="1" max="10" value="'+(p.minScore||5)+'">'),
     '<div class="sp-sec">Zielkriterien</div>',
     '<div class="fld"><label>Shopsystem</label><div class="crit-wrap">'+shopSystems.map(s=>'<div class="crit-pill'+((cr.shopSystem||[]).includes(s)?' on':'')+'" onclick="toggleCrit(this,\'shopSystem\',\''+s+'\')">'+s+'</div>').join('')+'</div><div style="font-size:10px;color:var(--g5);margin-top:3px">Mehrfachauswahl möglich</div></div>',
-    '<div class="fld"><label>Mitarbeiter (mind.)</label><div class="crit-wrap">'+['20+','50+','100+','250+','500+'].map(s=>'<div class="crit-pill'+(cr.minEmployees===s?' on':'')+'" onclick="setSingleCrit(this,\'minEmployees\',\''+s+'\')">'+s+'</div>').join('')+'</div><div style="font-size:10px;color:var(--g5);margin-top:3px">BFSG gilt ab 20 Mitarbeitern (ab 28.06.2025)</div></div>',
+    '<div class="fld"><label>Mitarbeiter (mind.)</label><div class="crit-wrap">'+['20+','50+','100+','250+','500+'].map(s=>'<div class="crit-pill'+(cr.minEmployees===s?' on':'')+'" onclick="setSingleCrit(this,\'minEmployees\',\''+s+'\')">'+s+'</div>').join('')+'</div><div style="font-size:10px;color:var(--g5);margin-top:3px">BFSG-Pflicht ab 20 MA · Mittelstand i.d.R. 50–500 MA (ab 28.06.2025)</div></div>',
     '<div class="fld"><label>Ungef. Jahresumsatz</label><div class="crit-wrap">'+['bis 250K','250K–1M','1M–5M','5M–20M','20M+'].map(s=>'<div class="crit-pill'+(cr.revenueRange===s?' on':'')+'" onclick="setSingleCrit(this,\'revenueRange\',\''+s+'\')">'+s+'</div>').join('')+'</div></div>',
     field('Ausschlusskeywords','<input id="sp-avoid" value="'+esc((cr.avoidKeywords||[]).join(', '))+'" placeholder="Kleinunternehmen, Einzelperson…">'),
     '<div class="sp-sec">Batch-Versand</div>',
@@ -1154,9 +1154,9 @@ function dDrop(e,tid){ e.preventDefault(); if(_dragId===tid) return; const fi=pr
 function openAddProject(){
   _newIcon='🏢';
   setModal('Neue Kampagne','',
-    field('Kampagnenname *','<input id="np-name" placeholder="z.B. Shopify – Bayern">')+
+    field('Kampagnenname *','<input id="np-name" placeholder="z.B. Shopware Mittelstand Bayern">')+
     '<div class="fld"><label>Icon</label><div class="ip">'+['🏢','🏪','🔧','📦','🏦','⚖️','🏗️','🎯','🏭','🛒','💼','🌐'].map((ic,i)=>'<div class="ip-o'+(i===0?' sel':'')+'" onclick="pickModalIcon(this,\''+ic+'\')">'+ic+'</div>').join('')+'</div></div>'+
-    field('Keywords (eine pro Zeile)','<textarea id="np-kw" rows="3" placeholder="Shopify Shop Deutschland\nOnline Händler Barrierefreiheit BFSG"></textarea>')+
+    field('Keywords (eine pro Zeile)','<textarea id="np-kw" rows="3" placeholder="Shopware Mittelstand Deutschland\nmittelständischer Händler Online Shop BFSG"></textarea>')+
     field('Region','<input id="np-loc" value="Deutschland">')+
     field('E-Mail-Brief (Stichpunkte für die KI)','<textarea id="np-brief" rows="3" placeholder="Ihr Leistungsangebot zur BFSG-Umsetzung…"></textarea>'),
     '<button class="mfb ghost" onclick="closeModal()">Abbrechen</button><button class="mfb primary" onclick="addProject()">Erstellen</button>');
@@ -1165,7 +1165,7 @@ function pickModalIcon(el,ic){ document.querySelectorAll('#ov .ip-o').forEach(e=
 function addProject(){
   const name=(document.getElementById('np-name').value||'').trim(); if(!name){ toast('Name erforderlich','err'); return; }
   const id=name.toLowerCase().replace(/\s+/g,'-')+'-'+Date.now();
-  projects.push({id,name,icon:_newIcon,keywords:(document.getElementById('np-kw').value||'').split('\n').map(s=>s.trim()).filter(Boolean),location:(document.getElementById('np-loc').value||'').trim()||'Deutschland',criteria:{shopSystem:['Shopify'],minEmployees:'20+',revenueRange:null,avoidKeywords:[]},emailBrief:(document.getElementById('np-brief').value||'').trim(),followUpBrief:'',batchSize:5,batchDelay:5,maxLeads:20,minScore:5});
+  projects.push({id,name,icon:_newIcon,keywords:(document.getElementById('np-kw').value||'').split('\n').map(s=>s.trim()).filter(Boolean),location:(document.getElementById('np-loc').value||'').trim()||'Deutschland',criteria:{shopSystem:['Shopify'],minEmployees:'50+',revenueRange:'1M–5M',avoidKeywords:['Kleinunternehmen','Einzelperson']},emailBrief:(document.getElementById('np-brief').value||'').trim(),followUpBrief:'',batchSize:5,batchDelay:8,maxLeads:20,minScore:6});
   saveProjects(); contacts[id]=[]; renderSidebar(); closeModal(); selectProject(id); toast('"'+name+'" erstellt','ok');
 }
 
