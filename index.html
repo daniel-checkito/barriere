@@ -348,6 +348,7 @@ tr.data-row:hover .ra-wrap{opacity:1;}
     <!-- CONTACTS VIEW -->
     <div class="main-view on" id="view-contacts">
       <div id="projHeader">
+        <div id="phIcon" style="font-size:22px;flex-shrink:0">⚖️</div>
         <div class="ph-info">
           <div class="ph-name" id="phName">Kampagne auswählen</div>
           <div class="ph-sub" id="phSub">Wählen Sie eine Kampagne aus der Sidebar</div>
@@ -858,7 +859,7 @@ async function selectProject(id){
   currentPid=id; _selectedIds.clear();
   const p=getProj(id);
   document.getElementById('tbProj').textContent=p.name;
-  document.getElementById('phIcon').textContent=p.icon;
+  const _phIcon=document.getElementById('phIcon'); if(_phIcon) _phIcon.textContent=p.icon;
   document.getElementById('phName').textContent=p.name;
   document.getElementById('phSub').textContent=(p.keywords||[]).slice(0,2).join(' · ');
   document.getElementById('findBtn').disabled=false;
@@ -1140,7 +1141,7 @@ function saveSettings(){
   const cr=_critState[p.id]||p.criteria||{};
   cr.avoidKeywords=g('sp-avoid').split(',').map(s=>s.trim()).filter(Boolean); p.criteria=cr;
   saveProjects();
-  document.getElementById('phName').textContent=p.name; document.getElementById('phIcon').textContent=p.icon; document.getElementById('tbProj').textContent=p.name;
+  document.getElementById('phName').textContent=p.name; const _phi=document.getElementById('phIcon'); if(_phi) _phi.textContent=p.icon; document.getElementById('tbProj').textContent=p.name;
   renderSidebar(); toast('Einstellungen gespeichert','ok');
 }
 function closeSettings(){ document.getElementById('settingsPanel').classList.add('hidden'); }
