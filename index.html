@@ -298,15 +298,6 @@ tr.data-row:hover .ra-wrap{opacity:1;}
 /* batch delay info */
 .delay-info{background:rgba(37,99,235,.04);border:1.5px solid rgba(37,99,235,.15);border-radius:7px;padding:9px 12px;font-size:11px;color:var(--blue);line-height:1.6;}
 .delay-info strong{font-weight:800;}
-/* keys modal */
-.key-row{display:flex;flex-direction:column;gap:3px;margin-bottom:8px;}
-.key-row label{font-size:10px;font-weight:700;letter-spacing:1px;color:var(--g5);text-transform:uppercase;}
-.key-row .key-desc{font-size:10px;color:var(--g5);line-height:1.5;margin-top:2px;}
-.key-row input{padding:7px 9px;border:1.5px solid var(--g2);border-radius:5px;font-family:'DM Mono';font-size:11px;background:var(--g1);color:var(--bk);width:100%;transition:border-color .15s;}
-.key-row input:focus{outline:none;border-color:var(--or);background:#fff;}
-.key-row input.has-value{border-color:rgba(22,163,74,.4);background:rgba(22,163,74,.03);}
-.key-status-dot{width:7px;height:7px;border-radius:50%;background:var(--g3);display:inline-block;margin-left:5px;vertical-align:middle;}
-.key-status-dot.active{background:var(--green);}
 .cc{padding:3px 9px;border-radius:100px;border:1.5px solid var(--g2);font-size:11px;font-weight:700;color:var(--g7);cursor:pointer;transition:all .12s;background:#fff;}
 .cc.sel{border-color:var(--or);background:rgba(255,107,0,.07);color:var(--or);}
 .cat-chips{display:flex;flex-wrap:wrap;gap:4px;}
@@ -329,7 +320,6 @@ tr.data-row:hover .ra-wrap{opacity:1;}
   <div class="tsep"></div>
   <span class="tb-proj" id="tbProj">Kampagne auswählen</span>
   <div class="sp"></div>
-  <button class="xb ghost" onclick="openKeysModal()">API Keys</button>
 </div>
 
 <div id="app">
@@ -434,10 +424,10 @@ tr.data-row:hover .ra-wrap{opacity:1;}
 
   <!-- CONTACT PANEL -->
   <div id="panel" class="hidden">
-    <div class="p-hd"><h3 id="panelTitle">Contact</h3><button class="mcl" onclick="closePanel()">✕</button></div>
+    <div class="p-hd"><h3 id="panelTitle">Lead</h3><button class="mcl" onclick="closePanel()">✕</button></div>
     <div class="p-tabs">
-      <button class="p-tab on" id="pt-info"   onclick="switchPTab('info')">Info</button>
-      <button class="p-tab"    id="pt-emails" onclick="switchPTab('emails')">Emails</button>
+      <button class="p-tab on" id="pt-info"   onclick="switchPTab('info')">Details</button>
+      <button class="p-tab"    id="pt-emails" onclick="switchPTab('emails')">E-Mails</button>
     </div>
     <div class="p-pane on" id="pp-info">
       <div class="pbody" id="panelBody"></div>
@@ -470,10 +460,7 @@ tr.data-row:hover .ra-wrap{opacity:1;}
 
 <script>
 // ── CONFIG ──
-const N8N = 'https://meshminds.app.n8n.cloud/webhook/outreach-bot';
-let pplxApiKey      = localStorage.getItem('mm_pplx')      || '';
-let anthropicApiKey = localStorage.getItem('mm_anthropic') || '';
-let serpApiKey      = localStorage.getItem('mm_serp')      || '';
+const N8N = 'https://meshminds.app.n8n.cloud/webhook/outreach';
 
 // ── STATE ──
 let projects      = JSON.parse(localStorage.getItem('mm_projects') || 'null') || defaultProjects();
@@ -508,7 +495,6 @@ function defaultProjects(){
 
 function saveProjects(){ localStorage.setItem('mm_projects',JSON.stringify(projects)); }
 function saveQueue(){ localStorage.setItem('mm_queue',JSON.stringify(queue)); }
-function saveKeys(){ localStorage.setItem('mm_anthropic',anthropicApiKey); localStorage.setItem('mm_serp',serpApiKey); localStorage.setItem('mm_pplx',pplxApiKey); }
 function getProj(id){ return projects.find(p=>p.id===id); }
 function curProj(){ return getProj(currentPid); }
 function curContacts(){ return contacts[currentPid]||[]; }
@@ -554,24 +540,24 @@ function updateQueueBadge(){
 function renderQueue(){
   const list=document.getElementById('queueList');
   const summary=document.getElementById('queueSummary');
-  if(!currentPid){ list.innerHTML='<div class="queue-empty"><div class="ei">📋</div><p>Select a project to see its queue.</p></div>'; return; }
+  if(!currentPid){ list.innerHTML='<div class="queue-empty"><div class="ei">📋</div><p>Kampagne auswählen um die Warteschlange zu sehen.</p></div>'; return; }
 
   const all=queue.filter(q=>q.projectId===currentPid);
   const active=all.filter(q=>!q.cancelled);
   const initials=active.filter(q=>q.type==='initial');
   const followups=active.filter(q=>q.type==='followup');
 
-  summary.textContent=active.length>0?(initials.length+' initial · '+followups.length+' follow-up pending'):'Queue is empty';
+  summary.textContent=active.length>0?(initials.length+' Erstkontakt · '+followups.length+' Follow-up ausstehend'):'Warteschlange leer';
 
   if(!all.length){
-    list.innerHTML='<div class="queue-empty"><div class="ei">📭</div><p>No emails queued for this project.<br>Use Send Batch to schedule emails.</p></div>';
+    list.innerHTML='<div class="queue-empty"><div class="ei">📭</div><p>Keine E-Mails in der Warteschlange.<br>Nutzen Sie „Batch senden" um E-Mails einzuplanen.</p></div>';
     return;
   }
 
   let html='';
 
   if(initials.length){
-    html+='<div class="queue-section-hd">Initial Emails ('+initials.length+')</div>';
+    html+='<div class="queue-section-hd">Erstkontakt ('+initials.length+')</div>';
     html+=initials.map(item=>{
       const when=item.scheduledFor?fmtDate(item.scheduledFor):'Next send';
       return '<div class="queue-item" id="qi-'+item.id+'">'+
@@ -581,7 +567,7 @@ function renderQueue(){
           '<div class="qi-email">'+esc(item.email)+'</div>'+
           '<div class="qi-meta"><span class="qi-tag initial">Initial</span><span class="qi-when">'+esc(when)+'</span></div>'+
         '</div>'+
-        '<button class="qi-cancel" onclick="cancelQueueItem(\''+item.id+'\')">Cancel</button>'+
+        '<button class="qi-cancel" onclick="cancelQueueItem(\''+item.id+'\')">Abbrechen</button>'+
       '</div>';
     }).join('');
   }
@@ -597,7 +583,7 @@ function renderQueue(){
           '<div class="qi-email">'+esc(item.email)+'</div>'+
           '<div class="qi-meta"><span class="qi-tag followup">Follow-up</span><span class="qi-when">Sends '+esc(when)+'</span></div>'+
         '</div>'+
-        '<button class="qi-cancel" onclick="cancelQueueItem(\''+item.id+'\')">Cancel</button>'+
+        '<button class="qi-cancel" onclick="cancelQueueItem(\''+item.id+'\')">Abbrechen</button>'+
       '</div>';
     }).join('');
   }
@@ -605,11 +591,11 @@ function renderQueue(){
   // Cancelled section (collapsed)
   const cancelled=all.filter(q=>q.cancelled);
   if(cancelled.length){
-    html+='<div class="queue-section-hd">Cancelled ('+cancelled.length+')</div>';
+    html+='<div class="queue-section-hd">Abgebrochen ('+cancelled.length+')</div>';
     html+=cancelled.map(item=>'<div class="queue-item cancelled">'+
       '<div class="qi-type '+(item.type==='initial'?'initial':'followup')+'">'+(item.type==='initial'?'✉':'📬')+'</div>'+
       '<div class="qi-info"><div class="qi-brand">'+esc(item.brand)+'</div><div class="qi-email">'+esc(item.email)+'</div></div>'+
-      '<span class="qi-cancelled-lbl">Cancelled</span>'+
+      '<span class="qi-cancelled-lbl">Abgebrochen</span>'+
     '</div>').join('');
   }
 
@@ -626,25 +612,6 @@ function fmtDate(iso){
   if(hrs<24) return 'In '+hrs+'h';
   const days=Math.round(hrs/24);
   return 'In '+days+'d';
-}
-
-// ── KEYS ──
-function checkFirstRun(){ if(!anthropicApiKey||!serpApiKey) setTimeout(openKeysModal,400); }
-function openKeysModal(){
-  setModal('API Keys','','<div style="font-size:12px;color:var(--g5);line-height:1.6;margin-bottom:4px">Keys are saved in localStorage in this browser — enter once, persist permanently.</div>'+
-    keyRowHtml('Anthropic','sk-ant-…','ki-ant','Writes personalised emails via Claude')+
-    keyRowHtml('SerpAPI','Your SerpAPI key','ki-serp','Finds leads via Google search')+
-    keyRowHtml('Perplexity','pplx-…','ki-pplx','Optional — AI research per lead'),
-    '<button class="mfb ghost" onclick="closeModal()">Cancel</button><button class="mfb primary" onclick="saveKeysFromModal()">Save</button>');
-  setTimeout(()=>{ setKV('ki-ant',anthropicApiKey); setKV('ki-serp',serpApiKey); setKV('ki-pplx',pplxApiKey); },30);
-}
-function keyRowHtml(l,ph,id,desc){ return '<div class="key-row"><label>'+l+' <span class="key-status-dot" id="kd-'+id+'"></span></label><input type="password" id="'+id+'" placeholder="'+ph+'" onfocus="this.type=\'text\'" onblur="this.type=\'password\'" oninput="refreshDot(\''+id+'\')"><div class="key-desc">'+desc+'</div></div>'; }
-function setKV(id,val){ const el=document.getElementById(id); if(!el) return; el.value=val; refreshDot(id); }
-function refreshDot(id){ const el=document.getElementById(id),dot=document.getElementById('kd-'+id); if(!el||!dot) return; const ok=el.value.length>8; dot.classList.toggle('active',ok); el.classList.toggle('has-value',ok); }
-function saveKeysFromModal(){
-  const g=id=>{ const el=document.getElementById(id); return el?el.value.trim():''; };
-  anthropicApiKey=g('ki-ant'); serpApiKey=g('ki-serp'); pplxApiKey=g('ki-pplx');
-  saveKeys(); closeModal(); toast('API keys saved','ok');
 }
 
 // ── FIND LEADS MODAL ──
@@ -674,9 +641,8 @@ async function confirmFind(){
   try{
     const data=await api({action:'find_leads',projectId:currentPid,keywords:p.keywords,location:p.location,
       criteria:p.criteria,emailBrief:p.emailBrief||undefined,notes:p.notes||undefined,
-      maxResults:_findCount,minScore:p.minScore||5,
-      serpKey:serpApiKey||undefined,pplxKey:pplxApiKey||undefined,usePplx:!!pplxApiKey});
-    toast('✓ '+(data.count||0)+' neue Leads gefunden'+(pplxApiKey?' + analysiert':''),'ok');
+      maxResults:_findCount,minScore:p.minScore||5});
+    toast('✓ '+(data.count||0)+' neue Leads gefunden','ok');
     await loadContacts();
   }catch(e){ toast('Suche fehlgeschlagen: '+e.message,'err'); }
   btn.disabled=false; btn.innerHTML='Leads suchen';
@@ -684,32 +650,32 @@ async function confirmFind(){
 
 // ── BATCH MODAL ──
 function openBatchModal(){
-  if(!currentPid){ toast('Select a project first','info'); return; }
+  if(!currentPid){ toast('Zuerst eine Kampagne auswählen','info'); return; }
   const p=curProj();
   const pending=curContacts().filter(c=>!c.Status||c.Status==='Pending');
   const fuDue=curContacts().filter(c=>c.Status==='Sent'&&isEligibleForFu(c));
 
   if(!pending.length&&!fuDue.length){
-    toast('No pending contacts or follow-ups due','info');
+    toast('Keine ausstehenden Leads oder fälligen Follow-ups','info');
     return;
   }
 
   document.getElementById('modalBox').classList.add('wide');
-  setModal('Send Batch — '+esc(p.name),
-    (pending.length+' pending · '+fuDue.length+' follow-ups due · Sends '+p.batchSize+' at a time with '+p.batchDelay+'min delays'),
+  setModal('Batch senden — '+esc(p.name),
+    (pending.length+' ausstehend · '+fuDue.length+' Follow-ups fällig · '+p.batchSize+' E-Mails pro Block, '+p.batchDelay+' Min. Pause'),
     buildBatchBody(pending,fuDue,p),
-    '<button class="mfb ghost" onclick="closeModal()">Cancel</button>'+
-    '<button class="mfb primary" id="batchConfirmBtn" onclick="confirmBatch()">🚀 Queue Selected</button>');
+    '<button class="mfb ghost" onclick="closeModal()">Abbrechen</button>'+
+    '<button class="mfb primary" id="batchConfirmBtn" onclick="confirmBatch()">Ausgewählte einplanen</button>');
 }
 
 function buildBatchBody(pending,fuDue,p){
-  let html='<div class="delay-info">Emails will send in chunks of <strong>'+p.batchSize+'</strong>, waiting <strong>'+p.batchDelay+' min</strong> between each chunk. You can cancel individual emails in the Queue tab before they send.</div>';
+  let html='<div class="delay-info">Versand erfolgt in Blöcken von <strong>'+p.batchSize+'</strong> E-Mails, mit <strong>'+p.batchDelay+' Min.</strong> Pause dazwischen. Einzelne E-Mails können im Tab „Warteschlange" noch abgebrochen werden.</div>';
 
   if(pending.length){
-    html+='<div style="font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--g3);margin:10px 0 6px">Initial Emails ('+pending.length+')</div>';
+    html+='<div style="font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--g3);margin:10px 0 6px">Erstkontakt ('+pending.length+')</div>';
     html+='<div class="batch-controls">'+
-      '<label><input type="checkbox" id="batchSelAll" onchange="toggleBatchAll(this)"> Select all</label>'+
-      '<span class="batch-count-lbl" id="batchSelCount">'+pending.length+' selected</span>'+
+      '<label><input type="checkbox" id="batchSelAll" onchange="toggleBatchAll(this)"> Alle auswählen</label>'+
+      '<span class="batch-count-lbl" id="batchSelCount">'+pending.length+' ausgewählt</span>'+
     '</div>';
     html+=pending.map((c,i)=>{
       const sc=parseInt(c.Score||0);
@@ -727,13 +693,13 @@ function buildBatchBody(pending,fuDue,p){
   }
 
   if(fuDue.length){
-    html+='<div style="font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--g3);margin:14px 0 6px">Follow-ups Due ('+fuDue.length+')</div>';
+    html+='<div style="font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--g3);margin:14px 0 6px">Follow-ups fällig ('+fuDue.length+')</div>';
     html+=fuDue.map((c,i)=>'<div class="batch-contact">'+
       '<input type="checkbox" class="batch-fu-cb" data-uid="'+ensureUid(c,i)+'" checked onchange="updateBatchCount()">'+
       '<div class="bc-info">'+
         '<div class="bc-brand">'+esc(c.Brand||'—')+'</div>'+
         '<div class="bc-email">'+esc(c.Email)+'</div>'+
-        '<div style="font-size:10px;color:var(--blue);font-weight:600">Last contact: '+esc(c['Last Contact']||'—')+'</div>'+
+        '<div style="font-size:10px;color:var(--blue);font-weight:600">Letzter Kontakt: '+esc(c['Last Contact']||'—')+'</div>'+
       '</div>'+
       '<span style="font-size:10px;color:var(--blue);font-weight:700">Follow-up</span>'+
     '</div>').join('');
@@ -749,11 +715,11 @@ function toggleBatchAll(cb){
 function updateBatchCount(){
   const n=document.querySelectorAll('.batch-cb:checked').length+document.querySelectorAll('.batch-fu-cb:checked').length;
   const el=document.getElementById('batchSelCount');
-  if(el) el.textContent=n+' selected';
+  if(el) el.textContent=n+' ausgewählt';
 }
 
 async function confirmBatch(){
-  if(_isSending){ toast('Already sending','info'); return; }
+  if(_isSending){ toast('Versand läuft bereits','info'); return; }
   const p=curProj(); if(!p) return;
 
   // Collect selected uids
@@ -761,7 +727,7 @@ async function confirmBatch(){
   const selFuUids=new Set([...document.querySelectorAll('.batch-fu-cb:checked')].map(el=>el.dataset.uid));
   const totalSel=selInitialUids.size+selFuUids.size;
 
-  if(!totalSel){ toast('Select at least one contact','info'); return; }
+  if(!totalSel){ toast('Mindestens einen Lead auswählen','info'); return; }
   closeModal();
 
   // Build queue items
@@ -789,7 +755,7 @@ async function confirmBatch(){
 
   addToQueue(newItems);
   switchMainTab('queue');
-  toast(totalSel+' emails queued — sending now…','ok');
+  toast(totalSel+' E-Mails eingeplant – Versand läuft…','ok');
 
   // Execute queue
   _isSending=true;
@@ -838,7 +804,7 @@ async function executeQueue(p,pending,fuDue,bSize,bDelayMs){
 
     // delay between chunks
     if((i+1)%bSize===0&&i<allItems.length-1){
-      toast('Chunk '+(Math.floor(i/bSize)+1)+' sent. Waiting…','info');
+      toast('Block '+(Math.floor(i/bSize)+1)+' versendet. Warte…','info');
       await sleep(bDelayMs);
     }
   }
@@ -849,7 +815,7 @@ async function executeQueue(p,pending,fuDue,bSize,bDelayMs){
   }).filter(item=>{ const q=queue.find(q=>q.contactUid===item.contactUid&&q.type==='followup'); return !q; });
   if(fuItems.length){ addToQueue(fuItems); }
 
-  toast('✅ '+sent+' emails sent'+(fuItems.length?' · '+fuItems.length+' follow-ups scheduled':''),'ok');
+  toast('✓ '+sent+' E-Mails versendet'+(fuItems.length?' · '+fuItems.length+' Follow-ups eingeplant':''),'ok');
   await loadContacts();
 }
 
@@ -1018,18 +984,18 @@ function toggleAll(cb){ _selectedIds.clear(); if(cb.checked) curContacts().forEa
 function clearSelection(){ _selectedIds.clear(); const sa=document.getElementById('selectAll'); if(sa) sa.checked=false; updateBulkBar(); renderTable(); }
 function updateBulkBar(){ const n=_selectedIds.size; document.getElementById('bulkBar').classList.toggle('on',n>0); document.getElementById('bulkCount').textContent=n+' selected'; }
 function selectedContacts(){ return curContacts().filter((c,i)=>_selectedIds.has(ensureUid(c,i))); }
-async function bulkStatus(status){ const sel=selectedContacts(); for(const c of sel){ c.Status=status; try{ await api({action:'update_status',projectId:currentPid,row:c._row,Status:status}); }catch(e){} } clearSelection(); renderAll(); toast('Marked '+sel.length+' as '+status,'ok'); }
-async function bulkDelete(){ const sel=selectedContacts(); if(!sel.length) return; if(!confirm('Delete '+sel.length+' contacts?')) return; for(const c of sel){ try{ await api({action:'delete_contact',projectId:currentPid,row:c._row}); }catch(e){} } contacts[currentPid]=curContacts().filter(c=>!_selectedIds.has(c._uid)); clearSelection(); renderAll(); toast('Deleted '+sel.length,'ok'); }
+async function bulkStatus(status){ const sel=selectedContacts(); for(const c of sel){ c.Status=status; try{ await api({action:'update_status',projectId:currentPid,row:c._row,Status:status}); }catch(e){} } clearSelection(); renderAll(); toast(sel.length+' Leads aktualisiert','ok'); }
+async function bulkDelete(){ const sel=selectedContacts(); if(!sel.length) return; if(!confirm(sel.length+' Leads löschen?')) return; for(const c of sel){ try{ await api({action:'delete_contact',projectId:currentPid,row:c._row}); }catch(e){} } contacts[currentPid]=curContacts().filter(c=>!_selectedIds.has(c._uid)); clearSelection(); renderAll(); toast(sel.length+' Leads gelöscht','ok'); }
 
 // ── CSV EXPORT ──
 function exportCSV(){
-  if(!currentPid){ toast('Select a project first','info'); return; }
-  const cs=curContacts(); if(!cs.length){ toast('No contacts','info'); return; }
+  if(!currentPid){ toast('Zuerst eine Kampagne auswählen','info'); return; }
+  const cs=curContacts(); if(!cs.length){ toast('Keine Leads vorhanden','info'); return; }
   const cols=['Brand','Name','Email','Instagram','Status','Score','Emails Sent','Last Contact','EnrichSummary','Notes','Url'];
   const rows=[cols.join(','),...cs.map(c=>cols.map(k=>{ const v=String(c[k]||'').replace(/"/g,'""'); return v.includes(',')||v.includes('"')||v.includes('\n')?'"'+v+'"':v; }).join(','))];
   const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([rows.join('\n')],{type:'text/csv'}));
   a.download=(curProj()?.name||'contacts')+'-'+today()+'.csv'; a.click();
-  toast('Exported '+cs.length+' contacts','ok');
+  toast(cs.length+' Leads exportiert','ok');
 }
 function isDuplicate(email){ return Object.values(contacts).some(cs=>cs.some(c=>(c.Email||'').toLowerCase()===email.toLowerCase())); }
 
@@ -1041,25 +1007,25 @@ function openContact(ri,goEmails){
   document.getElementById('panelTitle').textContent=c.Brand||c.Name||'Contact';
   const url=c.Url||c._raw_url||'',needsFu=c.Status==='Sent'&&isEligibleForFu(c),canSend=!c.Status||c.Status==='Pending',canFu=needsFu,canReply=['Sent','FollowUp'].includes(c.Status);
   document.getElementById('panelBody').innerHTML=
-    (needsFu?'<div class="fu-badge"><span>📬</span><span class="ft">Follow-up due — 48h+ since initial email.</span></div>':'')+
-    '<div class="psec">Contact</div>'+
+    (needsFu?'<div class="fu-badge"><span>↑</span><span class="ft">Follow-up fällig – mehr als 48 Stunden seit Erstkontakt.</span></div>':'')+
+    '<div class="psec">Kontaktdaten</div>'+
     field('Brand','<input value="'+esc(c.Brand)+'" oninput="curContacts()['+ri+'].Brand=this.value">')+
     field('Name','<input value="'+esc(c.Name||'')+'" oninput="curContacts()['+ri+'].Name=this.value">')+
     field('Email','<input type="email" value="'+esc(c.Email)+'" oninput="curContacts()['+ri+'].Email=this.value">')+
     field('Instagram','<input value="'+esc(c.Instagram||'')+'" placeholder="@brand" oninput="curContacts()['+ri+'].Instagram=this.value">')+
     field('Status','<select onchange="curContacts()['+ri+'].Status=this.value;renderAll()">'+['Pending','Sent','FollowUp','Replied','Interested','Skipped','Bounced'].map(s=>'<option'+(c.Status===s?' selected':'')+'>'+s+'</option>').join('')+'</select>')+
     (url?field('Website','<div style="display:flex;gap:5px"><input value="'+esc(url)+'" oninput="curContacts()['+ri+'].Url=this.value" style="flex:1"><a href="'+esc(url)+'" target="_blank" style="padding:5px 8px;border:1.5px solid var(--g2);border-radius:5px;font-size:11px;font-weight:700;color:var(--g5);text-decoration:none;flex-shrink:0" onmouseover="this.style.color=\'var(--or)\'" onmouseout="this.style.color=\'var(--g5)\'">↗</a></div>'):'')+
-    (c.Enriched?'<div class="psec">Research</div><div class="enrich-card"><strong>Perplexity</strong>'+esc(c.EnrichSummary||'')+(c.EnrichTags?'<div class="enrich-tags">'+c.EnrichTags.split(',').map(t=>'<span class="etag">'+esc(t.trim())+'</span>').join('')+'</div>':'')+'</div>':'')+
-    '<div class="psec">Notes</div>'+field('','<textarea rows="3" oninput="curContacts()['+ri+'].Notes=this.value">'+esc(c.Notes||'')+'</textarea>');
+    (c.Enriched?'<div class="psec">Analyse</div><div class="enrich-card"><strong>KI-Recherche</strong>'+esc(c.EnrichSummary||'')+(c.EnrichTags?'<div class="enrich-tags">'+c.EnrichTags.split(',').map(t=>'<span class="etag">'+esc(t.trim())+'</span>').join('')+'</div>':'')+'</div>':'')+
+    '<div class="psec">Interne Notiz</div>'+field('','<textarea rows="3" oninput="curContacts()['+ri+'].Notes=this.value">'+esc(c.Notes||'')+'</textarea>');
   document.getElementById('panelFooter').innerHTML=
-    (canSend?'<button class="pfb primary" id="pSendBtn" onclick="sendSingle('+ri+')">✉ Generate Email</button>':'')+
-    (canFu?'<button class="pfb primary" id="pFuBtn" onclick="sendFollowUp('+ri+')">📬 Send Follow-up</button>':'')+
-    (canReply&&!canSend&&!canFu?'<button class="pfb secondary" onclick="quickReply('+ri+')">✓ Mark Replied</button>':'')+
-    '<button class="pfb secondary" onclick="saveContact('+ri+')">Save Changes</button>';
+    (canSend?'<button class="pfb primary" id="pSendBtn" onclick="sendSingle('+ri+')">E-Mail generieren</button>':'')+
+    (canFu?'<button class="pfb primary" id="pFuBtn" onclick="sendFollowUp('+ri+')">Follow-up senden</button>':'')+
+    (canReply&&!canSend&&!canFu?'<button class="pfb secondary" onclick="quickReply('+ri+')">✓ Geantwortet markieren</button>':'')+
+    '<button class="pfb secondary" onclick="saveContact('+ri+')">Speichern</button>';
   switchPTab(goEmails?'emails':'info');
 }
 function closePanel(){ document.getElementById('panel').classList.add('hidden'); _panelIdx=null; }
-async function saveContact(ri){ const c=curContacts()[ri]; try{ await api({action:'update_status',projectId:currentPid,row:c._row,...c}); toast('Saved','ok'); renderAll(); }catch(e){ toast('Save failed','err'); } }
+async function saveContact(ri){ const c=curContacts()[ri]; try{ await api({action:'update_status',projectId:currentPid,row:c._row,...c}); toast('Gespeichert','ok'); renderAll(); }catch(e){ toast('Speichern fehlgeschlagen','err'); } }
 
 // ── EMAIL LOG ──
 function renderEmailLog(ri){ const c=curContacts()[ri],logs=emailLogs[c.Email]||[],el=document.getElementById('emailLog'); if(!logs.length){ el.innerHTML='<div class="sent-empty">No emails sent yet.</div>'; return; } el.innerHTML=logs.slice().reverse().map((log,i)=>'<div class="email-log-item" onclick="toggleExpand('+i+')"><div class="eli-date">'+esc(log.date)+' <span class="eli-tag '+(log.type==='followup'?'followup':'initial')+'">'+(log.type==='followup'?'Follow-up':'Initial')+'</span>'+(log.variant?'<span class="eli-tag" style="background:rgba(124,58,237,.08);color:var(--purple);border-color:rgba(124,58,237,.2)">'+esc(log.variant)+'</span>':'')+'</div><div class="eli-subj">'+esc(log.subject)+'</div><div class="eli-prev">'+esc(log.body.slice(0,90))+'…</div></div><div class="eli-expanded" id="elog-'+i+'">'+esc(log.body)+'</div>').join(''); }
@@ -1071,27 +1037,27 @@ async function sendSingle(ri){
   if(document.getElementById('panel').classList.contains('hidden')) openContact(ri);
   switchPTab('info');
   const btn=document.getElementById('pSendBtn');
-  if(btn){ btn.disabled=true; btn.innerHTML='<span class="spin"></span> Writing…'; }
-  toast('Claude is writing a personalised email…','info');
+  if(btn){ btn.disabled=true; btn.innerHTML='<span class="spin"></span> Generiert…'; }
+  toast('E-Mail wird generiert…','info');
   try{
     const data=await api({action:'send_outreach',projectId:currentPid,contact:{name:c.Name,brand:c.Brand,email:c.Email,enrichSummary:c.EnrichSummary||c.Snippet||'',enrichTags:c.EnrichTags||''},emailBrief:p?.emailBrief||'',abTest:true});
     if(!data.success) throw new Error(data.error||'Failed');
-    showPreview(ri,data,'initial'); toast('Preview ready — confirm to send','ok');
-  }catch(e){ toast('Error: '+e.message,'err'); if(btn){ btn.disabled=false; btn.innerHTML='✉ Generate Email'; } }
+    showPreview(ri,data,'initial'); toast('Vorschau bereit – bitte bestätigen','ok');
+  }catch(e){ toast('Fehler: '+e.message,'err'); if(btn){ btn.disabled=false; btn.innerHTML='E-Mail generieren'; } }
 }
 async function sendFollowUp(ri){
   const c=curContacts()[ri],p=curProj(); _panelIdx=ri;
   if(document.getElementById('panel').classList.contains('hidden')) openContact(ri);
   switchPTab('info');
   const btn=document.getElementById('pFuBtn');
-  if(btn){ btn.disabled=true; btn.innerHTML='<span class="spin"></span> Writing…'; }
-  toast('Writing follow-up…','info');
+  if(btn){ btn.disabled=true; btn.innerHTML='<span class="spin"></span> Generiert…'; }
+  toast('Follow-up wird generiert…','info');
   try{
     const origSubj=(emailLogs[c.Email]||[]).find(l=>l.type==='initial')?.subject||'';
     const data=await api({action:'send_followup',projectId:currentPid,contact:{name:c.Name,brand:c.Brand,email:c.Email},followUpBrief:p?.followUpBrief||'',originalSubject:origSubj});
     if(!data.success) throw new Error(data.error||'Failed');
-    showPreview(ri,data,'followup'); toast('Follow-up preview ready','ok');
-  }catch(e){ toast('Error: '+e.message,'err'); if(btn){ btn.disabled=false; btn.innerHTML='📬 Send Follow-up'; } }
+    showPreview(ri,data,'followup'); toast('Follow-up Vorschau bereit','ok');
+  }catch(e){ toast('Fehler: '+e.message,'err'); if(btn){ btn.disabled=false; btn.innerHTML='Follow-up senden'; } }
 }
 function showPreview(ri,data,type){
   const c=curContacts()[ri];
@@ -1100,7 +1066,7 @@ function showPreview(ri,data,type){
   prev.innerHTML='<div class="eprev-hd"><div class="eprev-subj">'+esc(data.subject)+(data.variant?'<span class="ab-pill">'+esc(data.variant)+'</span>':'')+'</div><div class="eprev-meta">To: '+esc(c.Email)+'</div></div><div class="eprev-body">'+esc(data.body)+'</div>';
   document.getElementById('panelBody').insertBefore(prev,document.getElementById('panelBody').firstChild);
   const enc=encodeURIComponent(JSON.stringify({subject:data.subject,body:data.body,type,variant:data.variant||''}));
-  document.getElementById('panelFooter').innerHTML='<button class="pfb primary" onclick="confirmSend('+ri+',\''+enc+'\')">📤 Confirm & Send</button><button class="pfb secondary" onclick="'+(type==='followup'?'sendFollowUp':'sendSingle')+'('+ri+')">↻ Regenerate</button>';
+  document.getElementById('panelFooter').innerHTML='<button class="pfb primary" onclick="confirmSend('+ri+',\''+enc+'\')">Bestätigen &amp; Senden</button><button class="pfb secondary" onclick="'+(type==='followup'?'sendFollowUp':'sendSingle')+'('+ri+')">↻ Neu generieren</button>';
 }
 async function confirmSend(ri,enc){
   const c=curContacts()[ri],parsed=JSON.parse(decodeURIComponent(enc));
@@ -1111,9 +1077,9 @@ async function confirmSend(ri,enc){
     if(!emailLogs[c.Email]) emailLogs[c.Email]=[];
     emailLogs[c.Email].push({date:d,subject:parsed.subject,body:parsed.body,type:parsed.type,variant:parsed.variant||''});
     c.Status=newSt; c['Last Contact']=d; c['Emails Sent']=newSent;
-    renderAll(); toast('✅ Sent to '+c.Email,'ok');
-    document.getElementById('panelFooter').innerHTML='<button class="pfb secondary" style="color:var(--green);border-color:var(--green)" disabled>✓ Sent!</button><button class="pfb secondary" onclick="switchPTab(\'emails\')">View Emails →</button>';
-  }catch(e){ toast('Send failed','err'); }
+    renderAll(); toast('✓ Gesendet an '+c.Email,'ok');
+    document.getElementById('panelFooter').innerHTML='<button class="pfb secondary" style="color:var(--green);border-color:var(--green)" disabled>✓ Versendet</button><button class="pfb secondary" onclick="switchPTab(\'emails\')">E-Mail-Verlauf →</button>';
+  }catch(e){ toast('Versand fehlgeschlagen','err'); }
 }
 
 // ── SETTINGS ──
@@ -1171,13 +1137,13 @@ function saveSettings(){
   cr.avoidKeywords=g('sp-avoid').split(',').map(s=>s.trim()).filter(Boolean); p.criteria=cr;
   saveProjects();
   document.getElementById('phName').textContent=p.name; document.getElementById('phIcon').textContent=p.icon; document.getElementById('tbProj').textContent=p.name;
-  renderSidebar(); toast('Saved','ok');
+  renderSidebar(); toast('Einstellungen gespeichert','ok');
 }
 function closeSettings(){ document.getElementById('settingsPanel').classList.add('hidden'); }
 
 // ── PROJECT MANAGEMENT ──
-function deleteProject(id){ const p=getProj(id); if(!confirm('Delete "'+p.name+'"?')) return; projects=projects.filter(pr=>pr.id!==id); delete contacts[id]; saveProjects(); if(currentPid===id){ currentPid=null; document.getElementById('phName').textContent='Select a project'; document.getElementById('kpiBar').style.display='none'; renderTable(); } renderSidebar(); toast('"'+p.name+'" deleted','ok'); }
-function archiveProject(id){ const p=getProj(id); p.archived=!p.archived; saveProjects(); renderSidebar(); toast((p.archived?'Archived: ':'Unarchived: ')+p.name,'ok'); }
+function deleteProject(id){ const p=getProj(id); if(!confirm('"'+p.name+'" löschen?')) return; projects=projects.filter(pr=>pr.id!==id); delete contacts[id]; saveProjects(); if(currentPid===id){ currentPid=null; document.getElementById('phName').textContent='Kampagne auswählen'; document.getElementById('kpiBar').style.display='none'; renderTable(); } renderSidebar(); toast('"'+p.name+'" gelöscht','ok'); }
+function archiveProject(id){ const p=getProj(id); p.archived=!p.archived; saveProjects(); renderSidebar(); toast((p.archived?'Archiviert: ':'Reaktiviert: ')+p.name,'ok'); }
 function dStart(e,id){ _dragId=id; e.currentTarget.classList.add('dragging'); e.dataTransfer.effectAllowed='move'; }
 function dEnd(e){ e.currentTarget.classList.remove('dragging'); document.querySelectorAll('.proj-item').forEach(el=>el.classList.remove('drag-over')); }
 function dOver(e){ e.preventDefault(); e.dataTransfer.dropEffect='move'; e.currentTarget.classList.add('drag-over'); }
@@ -1217,12 +1183,12 @@ function openAddContact(){
 function setAddCat(el,cat){ document.querySelectorAll('#ov .cc').forEach(c=>c.classList.remove('sel')); el.classList.add('sel'); _addCat=cat; }
 async function addContact(){
   const brand=(document.getElementById('ac-brand').value||'').trim(),email=(document.getElementById('ac-email').value||'').trim();
-  if(!brand||!email){ toast('Brand + Email required','err'); return; }
-  if(isDuplicate(email)){ toast('⚠ '+email+' already exists','err'); return; }
+  if(!brand||!email){ toast('Unternehmen + E-Mail erforderlich','err'); return; }
+  if(isDuplicate(email)){ toast('⚠ '+email+' ist bereits vorhanden','err'); return; }
   const btn=document.getElementById('acBtn'); btn.disabled=true; btn.innerHTML='<span class="spin"></span>';
-  try{ await api({action:'add_contact',projectId:currentPid,brand,name:(document.getElementById('ac-name').value||'').trim(),email,instagram:(document.getElementById('ac-ig').value||'').trim(),category:_addCat,snippet:(document.getElementById('ac-snip').value||'').trim()}); toast('Added!','ok'); closeModal(); await loadContacts(); }
-  catch(e){ toast('Failed','err'); }
-  btn.disabled=false; btn.textContent='Add';
+  try{ await api({action:'add_contact',projectId:currentPid,brand,name:(document.getElementById('ac-name').value||'').trim(),email,instagram:(document.getElementById('ac-ig').value||'').trim(),category:_addCat,snippet:(document.getElementById('ac-snip').value||'').trim()}); toast('Lead hinzugefügt','ok'); closeModal(); await loadContacts(); }
+  catch(e){ toast('Fehler beim Hinzufügen','err'); }
+  btn.disabled=false; btn.textContent='Hinzufügen';
 }
 
 // ── MODAL HELPER ──
@@ -1246,12 +1212,8 @@ function toast(msg,type){ const el=document.getElementById('toast'); el.classNam
 // ── INIT ──
 document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ closeModal(); closePanel(); closeSettings(); } });
 document.getElementById('ov').addEventListener('click',e=>{ if(e.target===e.currentTarget) closeModal(); });
-pplxApiKey=localStorage.getItem('mm_pplx')||'';
-serpApiKey=localStorage.getItem('mm_serp')||'';
-anthropicApiKey=localStorage.getItem('mm_anthropic')||'';
 renderSidebar();
 if(projects.length) selectProject(projects[0].id);
-checkFirstRun();
 </script>
 </body>
 </html>
