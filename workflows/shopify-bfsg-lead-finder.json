@@ -28,25 +28,18 @@
       "parameters": {
         "method": "GET",
         "url": "https://serpapi.com/search",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpQueryAuth",
         "sendQuery": true,
         "queryParameters": {
           "parameters": [
-            { "name": "q",      "value": "={{ $json.query }}" },
-            { "name": "engine", "value": "google" },
-            { "name": "gl",     "value": "de" },
-            { "name": "hl",     "value": "de" },
-            { "name": "num",    "value": "100" }
+            { "name": "q",       "value": "={{ $json.query }}" },
+            { "name": "api_key", "value": "" },
+            { "name": "engine",  "value": "google" },
+            { "name": "gl",      "value": "de" },
+            { "name": "hl",      "value": "de" },
+            { "name": "num",     "value": "100" }
           ]
         },
         "options": { "continueOnFail": true }
-      },
-      "credentials": {
-        "httpQueryAuth": {
-          "id": "1",
-          "name": "SerpAPI"
-        }
       }
     },
     {
@@ -143,7 +136,7 @@
   },
   "active": false,
   "settings": { "executionOrder": "v1" },
-  "versionId": "g2h8i6j4-1k3l-4m5n-6o7p-8q9r0s1t2u3v",
+  "versionId": "h3i9j7k5-2l4m-4n6o-7p8q-9r0s1t2u3v4w",
   "meta": { "templateCredsSetupCompleted": true, "instanceId": "shopify-bfsg-finder" },
   "id": "shopify-bfsg-lead-finder-v1",
   "tags": [
