@@ -51,7 +51,7 @@
       "position": [860, 400],
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "const SKIP_DOMAINS = [\n  'myshopify.com', 'shopify.com', 'reddit.com', 'youtube.com', 'wikipedia.org',\n  'twitter.com', 'facebook.com', 'instagram.com', 'linkedin.com', 'xing.com',\n  'google.com', 'amazon.de', 'ebay.de', 'otto.de', 'zalando.de',\n  'trustpilot.com', 'yelp.de', 'tripadvisor.de', 'ionos.de', 'wix.com'\n];\n\nconst items = [];\nconst seen = new Set();\n\nfor (const inputItem of $input.all()) {\n  const response = inputItem.json;\n  for (const result of (response.organic_results || [])) {\n    if (!result.link) continue;\n    try {\n      const u = new URL(result.link);\n      const domain = u.hostname.replace(/^www\\./, '');\n      if (!domain.endsWith('.de')) continue;\n      if (SKIP_DOMAINS.some(s => domain.includes(s))) continue;\n      if (seen.has(domain)) continue;\n      seen.add(domain);\n      items.push({\n        json: {\n          company_name: result.title || domain,\n          domain,\n          url: `https://${domain}`,\n          description: result.snippet || '',\n          search_query: response.search_parameters?.q || ''\n        }\n      });\n    } catch (_) {}\n  }\n}\n\nreturn items.length ? items : [{ json: { _skip: true } }];"
+        "jsCode": "const SKIP_DOMAINS = [\n  'myshopify.com', 'shopify.com', 'reddit.com', 'youtube.com', 'wikipedia.org',\n  'twitter.com', 'facebook.com', 'instagram.com', 'linkedin.com', 'xing.com',\n  'google.com', 'amazon.de', 'ebay.de', 'otto.de', 'zalando.de',\n  'trustpilot.com', 'yelp.de', 'tripadvisor.de', 'ionos.de', 'wix.com'\n];\n\nfunction extractCategory(query) {\n  const m = query.match(/\"powered by shopify\"\\s+([^\\s]+)\\s+site:/);\n  if (m) return m[1].charAt(0).toUpperCase() + m[1].slice(1);\n  return 'Allgemein';\n}\n\nconst items = [];\nconst seen = new Set();\n\nfor (const inputItem of $input.all()) {\n  const response = inputItem.json;\n  const category = extractCategory(response.search_parameters?.q || '');\n  for (const result of (response.organic_results || [])) {\n    if (!result.link) continue;\n    try {\n      const u = new URL(result.link);\n      const domain = u.hostname.replace(/^www\\./, '');\n      if (!domain.endsWith('.de')) continue;\n      if (SKIP_DOMAINS.some(s => domain.includes(s))) continue;\n      if (seen.has(domain)) continue;\n      seen.add(domain);\n      items.push({\n        json: {\n          brand: result.title || domain,\n          domain,\n          url: `https://${domain}`,\n          category,\n          description: result.snippet || ''\n        }\n      });\n    } catch (_) {}\n  }\n}\n\nreturn items.length ? items : [{ json: { _skip: true } }];"
       }
     },
     {
@@ -62,7 +62,7 @@
       "position": [1080, 400],
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "const seen = new Set();\nconst unique = [];\nconst today = new Date().toISOString().split('T')[0];\n\nfor (const item of $input.all()) {\n  const lead = item.json;\n  if (lead._skip || !lead.domain) continue;\n  if (seen.has(lead.domain)) continue;\n  seen.add(lead.domain);\n  unique.push({ ...lead, date_found: today });\n}\n\nreturn unique.map(l => ({ json: l }));"
+        "jsCode": "const seen = new Set();\nconst unique = [];\n\nfor (const item of $input.all()) {\n  const lead = item.json;\n  if (lead._skip || !lead.domain) continue;\n  if (seen.has(lead.domain)) continue;\n  seen.add(lead.domain);\n  unique.push(lead);\n}\n\nreturn unique.map(l => ({ json: l }));"
       }
     },
     {
@@ -86,11 +86,10 @@
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
-            "Company Name": "={{ $json.company_name }}",
-            "Domain":       "={{ $json.domain }}",
-            "URL":          "={{ $json.url }}",
-            "Description":  "={{ $json.description }}",
-            "Date Found":   "={{ $json.date_found }}"
+            "Status":   "New",
+            "Brand":    "={{ $json.brand }}",
+            "URL":      "={{ $json.url }}",
+            "Category": "={{ $json.category }}"
           },
           "matchingColumns": [],
           "schema": []
