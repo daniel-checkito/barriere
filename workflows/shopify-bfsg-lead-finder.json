@@ -2,19 +2,6 @@
   "name": "Shopify BfSG – Lead Finder (Step 1)",
   "nodes": [
     {
-      "id": "a1b2c3d4-e5f6-4a7b-8c9d-e0f1a2b3c4d5",
-      "name": "Setup Instructions",
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [200, 80],
-      "parameters": {
-        "width": 660,
-        "height": 240,
-        "color": 5,
-        "content": "## Shopify BfSG – Lead Finder (Step 1)\n\nDiscovers German Shopify stores via Google (SerpAPI), deduplicates them, and writes raw leads to Google Sheets.\nEmail lookup and BfSG compliance evaluation happen in a **separate Step 2 workflow**.\n\n### What this workflow checks\n- Only `.de` domains are kept\n- Known platforms, marketplaces, and directories are filtered out\n- Duplicates (same domain) are removed\n- 5 queries are randomly selected each run from an industry pool, so every run finds different stores\n\n### Google Sheet\nLeads tab columns: `Company Name` · `Domain` · `URL` · `Description` · `Date Found`\n\nConnect a **Google Sheets OAuth2 credential** to the *Append to Google Sheets* node."
-      }
-    },
-    {
       "id": "b2c3d4e5-f6a7-4b8c-9d0e-f1a2b3c4d5e6",
       "name": "Manual Trigger",
       "type": "n8n-nodes-base.manualTrigger",
@@ -29,7 +16,7 @@
       "typeVersion": 2,
       "position": [420, 400],
       "parameters": {
-        "jsCode": "// Large pool of industry-specific queries so every run discovers different stores.\n// 5 are picked at random each execution.\nconst QUERY_POOL = [\n  '\"powered by shopify\" site:.de',\n  '\"powered by shopify\" impressum site:.de',\n  '\"powered by shopify\" mode site:.de',\n  '\"powered by shopify\" fashion site:.de',\n  '\"powered by shopify\" sport site:.de',\n  '\"powered by shopify\" outdoor site:.de',\n  '\"powered by shopify\" kosmetik site:.de',\n  '\"powered by shopify\" beauty site:.de',\n  '\"powered by shopify\" schmuck site:.de',\n  '\"powered by shopify\" wohnen site:.de',\n  '\"powered by shopify\" möbel site:.de',\n  '\"powered by shopify\" haustier site:.de',\n  '\"powered by shopify\" baby site:.de',\n  '\"powered by shopify\" küche site:.de',\n  '\"powered by shopify\" lebensmittel site:.de',\n  '\"powered by shopify\" elektronik site:.de',\n  '\"powered by shopify\" gaming site:.de',\n  '\"powered by shopify\" gesundheit site:.de',\n  '\"powered by shopify\" fitness site:.de',\n  '\"powered by shopify\" handwerk site:.de',\n  'shopify shop site:.de -myshopify.com',\n  'shopify online shop deutschland site:.de'\n];\n\n// Shuffle and pick 5 so each run finds a different mix\nconst shuffled = QUERY_POOL.slice().sort(() => 0.5 - Math.random());\nreturn shuffled.slice(0, 5).map((query, idx) => ({ json: { query, idx } }));"
+        "jsCode": "const QUERY_POOL = [\n  '\"powered by shopify\" site:.de',\n  '\"powered by shopify\" impressum site:.de',\n  '\"powered by shopify\" mode site:.de',\n  '\"powered by shopify\" fashion site:.de',\n  '\"powered by shopify\" sport site:.de',\n  '\"powered by shopify\" outdoor site:.de',\n  '\"powered by shopify\" kosmetik site:.de',\n  '\"powered by shopify\" beauty site:.de',\n  '\"powered by shopify\" schmuck site:.de',\n  '\"powered by shopify\" wohnen site:.de',\n  '\"powered by shopify\" möbel site:.de',\n  '\"powered by shopify\" haustier site:.de',\n  '\"powered by shopify\" baby site:.de',\n  '\"powered by shopify\" küche site:.de',\n  '\"powered by shopify\" lebensmittel site:.de',\n  '\"powered by shopify\" elektronik site:.de',\n  '\"powered by shopify\" gaming site:.de',\n  '\"powered by shopify\" gesundheit site:.de',\n  '\"powered by shopify\" fitness site:.de',\n  '\"powered by shopify\" handwerk site:.de',\n  'shopify shop site:.de -myshopify.com',\n  'shopify online shop deutschland site:.de'\n];\n\nconst shuffled = QUERY_POOL.slice().sort(() => 0.5 - Math.random());\nreturn shuffled.slice(0, 5).map((query, idx) => ({ json: { query, idx } }));"
       }
     },
     {
@@ -41,18 +28,25 @@
       "parameters": {
         "method": "GET",
         "url": "https://serpapi.com/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
         "sendQuery": true,
         "queryParameters": {
           "parameters": [
-            { "name": "q",       "value": "={{ $json.query }}" },
-            { "name": "api_key", "value": "971ff713ed5b6b2b7ce90445dfa5116ddcebf00ad48791ff045d72a1c48977ba" },
-            { "name": "engine",  "value": "google" },
-            { "name": "gl",      "value": "de" },
-            { "name": "hl",      "value": "de" },
-            { "name": "num",     "value": "100" }
+            { "name": "q",      "value": "={{ $json.query }}" },
+            { "name": "engine", "value": "google" },
+            { "name": "gl",     "value": "de" },
+            { "name": "hl",     "value": "de" },
+            { "name": "num",    "value": "100" }
           ]
         },
         "options": { "continueOnFail": true }
+      },
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "1",
+          "name": "SerpAPI"
+        }
       }
     },
     {
@@ -62,7 +56,7 @@
       "typeVersion": 2,
       "position": [860, 400],
       "parameters": {
-        "jsCode": "const response = $input.item.json;\n\n// Skip known platforms, marketplaces, directories and social networks\nconst SKIP_DOMAINS = [\n  'myshopify.com', 'shopify.com', 'reddit.com', 'youtube.com', 'wikipedia.org',\n  'twitter.com', 'facebook.com', 'instagram.com', 'linkedin.com', 'xing.com',\n  'google.com', 'amazon.de', 'ebay.de', 'otto.de', 'zalando.de',\n  'trustpilot.com', 'yelp.de', 'tripadvisor.de', 'ionos.de', 'wix.com'\n];\n\nconst items = [];\nconst seen = new Set();\n\nfor (const result of (response.organic_results || [])) {\n  if (!result.link) continue;\n  try {\n    const u = new URL(result.link);\n    const domain = u.hostname.replace(/^www\\./, '');\n    if (!domain.endsWith('.de')) continue;\n    if (SKIP_DOMAINS.some(s => domain.includes(s))) continue;\n    if (seen.has(domain)) continue;\n    seen.add(domain);\n    items.push({\n      json: {\n        company_name: result.title || domain,\n        domain,\n        url: `https://${domain}`,\n        description: result.snippet || '',\n        search_query: response.search_parameters?.q || ''\n      }\n    });\n  } catch (_) {}\n}\n\nreturn items.length ? items : [{ json: { _skip: true } }];"
+        "jsCode": "const response = $input.item.json;\n\nconst SKIP_DOMAINS = [\n  'myshopify.com', 'shopify.com', 'reddit.com', 'youtube.com', 'wikipedia.org',\n  'twitter.com', 'facebook.com', 'instagram.com', 'linkedin.com', 'xing.com',\n  'google.com', 'amazon.de', 'ebay.de', 'otto.de', 'zalando.de',\n  'trustpilot.com', 'yelp.de', 'tripadvisor.de', 'ionos.de', 'wix.com'\n];\n\nconst items = [];\nconst seen = new Set();\n\nfor (const result of (response.organic_results || [])) {\n  if (!result.link) continue;\n  try {\n    const u = new URL(result.link);\n    const domain = u.hostname.replace(/^www\\./, '');\n    if (!domain.endsWith('.de')) continue;\n    if (SKIP_DOMAINS.some(s => domain.includes(s))) continue;\n    if (seen.has(domain)) continue;\n    seen.add(domain);\n    items.push({\n      json: {\n        company_name: result.title || domain,\n        domain,\n        url: `https://${domain}`,\n        description: result.snippet || '',\n        search_query: response.search_parameters?.q || ''\n      }\n    });\n  } catch (_) {}\n}\n\nreturn items.length ? items : [{ json: { _skip: true } }];"
       }
     },
     {
@@ -84,7 +78,7 @@
       "typeVersion": 2,
       "position": [1300, 400],
       "parameters": {
-        "jsCode": "const all = $input.item.json.leads || [];\nconst seen = new Set();\nconst unique = [];\nconst today = new Date().toISOString().split('T')[0];\n\nfor (const lead of all) {\n  if (lead._skip || !lead.domain) continue;\n  if (seen.has(lead.domain)) continue;\n  seen.add(lead.domain);\n  unique.push({ ...lead, date_found: today });\n}\n\nconsole.log(`${unique.length} unique leads to write`);\nreturn unique.map(l => ({ json: l }));"
+        "jsCode": "const all = $input.item.json.leads || [];\nconst seen = new Set();\nconst unique = [];\nconst today = new Date().toISOString().split('T')[0];\n\nfor (const lead of all) {\n  if (lead._skip || !lead.domain) continue;\n  if (seen.has(lead.domain)) continue;\n  seen.add(lead.domain);\n  unique.push({ ...lead, date_found: today });\n}\n\nreturn unique.map(l => ({ json: l }));"
       }
     },
     {
