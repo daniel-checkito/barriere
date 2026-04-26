@@ -16,6 +16,7 @@
       "typeVersion": 2,
       "position": [420, 400],
       "parameters": {
+        "mode": "runOnceForAllItems",
         "jsCode": "const QUERY_POOL = [\n  '\"powered by shopify\" site:.de',\n  '\"powered by shopify\" impressum site:.de',\n  '\"powered by shopify\" mode site:.de',\n  '\"powered by shopify\" fashion site:.de',\n  '\"powered by shopify\" sport site:.de',\n  '\"powered by shopify\" outdoor site:.de',\n  '\"powered by shopify\" kosmetik site:.de',\n  '\"powered by shopify\" beauty site:.de',\n  '\"powered by shopify\" schmuck site:.de',\n  '\"powered by shopify\" wohnen site:.de',\n  '\"powered by shopify\" möbel site:.de',\n  '\"powered by shopify\" haustier site:.de',\n  '\"powered by shopify\" baby site:.de',\n  '\"powered by shopify\" küche site:.de',\n  '\"powered by shopify\" lebensmittel site:.de',\n  '\"powered by shopify\" elektronik site:.de',\n  '\"powered by shopify\" gaming site:.de',\n  '\"powered by shopify\" gesundheit site:.de',\n  '\"powered by shopify\" fitness site:.de',\n  '\"powered by shopify\" handwerk site:.de',\n  'shopify shop site:.de -myshopify.com',\n  'shopify online shop deutschland site:.de'\n];\n\nconst shuffled = QUERY_POOL.slice().sort(() => 0.5 - Math.random());\nreturn shuffled.slice(0, 5).map((query, idx) => ({ json: { query, idx } }));"
       }
     },
@@ -49,19 +50,8 @@
       "typeVersion": 2,
       "position": [860, 400],
       "parameters": {
-        "jsCode": "const response = $input.item.json;\n\nconst SKIP_DOMAINS = [\n  'myshopify.com', 'shopify.com', 'reddit.com', 'youtube.com', 'wikipedia.org',\n  'twitter.com', 'facebook.com', 'instagram.com', 'linkedin.com', 'xing.com',\n  'google.com', 'amazon.de', 'ebay.de', 'otto.de', 'zalando.de',\n  'trustpilot.com', 'yelp.de', 'tripadvisor.de', 'ionos.de', 'wix.com'\n];\n\nconst items = [];\nconst seen = new Set();\n\nfor (const result of (response.organic_results || [])) {\n  if (!result.link) continue;\n  try {\n    const u = new URL(result.link);\n    const domain = u.hostname.replace(/^www\\./, '');\n    if (!domain.endsWith('.de')) continue;\n    if (SKIP_DOMAINS.some(s => domain.includes(s))) continue;\n    if (seen.has(domain)) continue;\n    seen.add(domain);\n    items.push({\n      json: {\n        company_name: result.title || domain,\n        domain,\n        url: `https://${domain}`,\n        description: result.snippet || '',\n        search_query: response.search_parameters?.q || ''\n      }\n    });\n  } catch (_) {}\n}\n\nreturn items.length ? items : [{ json: { _skip: true } }];"
-      }
-    },
-    {
-      "id": "f6a7b8c9-d0e1-4f2a-3b4c-d5e6f7a8b9c0",
-      "name": "Aggregate All Results",
-      "type": "n8n-nodes-base.aggregate",
-      "typeVersion": 1,
-      "position": [1080, 400],
-      "parameters": {
-        "aggregate": "aggregateAllItemData",
-        "destinationFieldName": "leads",
-        "options": {}
+        "mode": "runOnceForAllItems",
+        "jsCode": "const SKIP_DOMAINS = [\n  'myshopify.com', 'shopify.com', 'reddit.com', 'youtube.com', 'wikipedia.org',\n  'twitter.com', 'facebook.com', 'instagram.com', 'linkedin.com', 'xing.com',\n  'google.com', 'amazon.de', 'ebay.de', 'otto.de', 'zalando.de',\n  'trustpilot.com', 'yelp.de', 'tripadvisor.de', 'ionos.de', 'wix.com'\n];\n\nconst items = [];\nconst seen = new Set();\n\nfor (const inputItem of $input.all()) {\n  const response = inputItem.json;\n  for (const result of (response.organic_results || [])) {\n    if (!result.link) continue;\n    try {\n      const u = new URL(result.link);\n      const domain = u.hostname.replace(/^www\\./, '');\n      if (!domain.endsWith('.de')) continue;\n      if (SKIP_DOMAINS.some(s => domain.includes(s))) continue;\n      if (seen.has(domain)) continue;\n      seen.add(domain);\n      items.push({\n        json: {\n          company_name: result.title || domain,\n          domain,\n          url: `https://${domain}`,\n          description: result.snippet || '',\n          search_query: response.search_parameters?.q || ''\n        }\n      });\n    } catch (_) {}\n  }\n}\n\nreturn items.length ? items : [{ json: { _skip: true } }];"
       }
     },
     {
@@ -69,9 +59,10 @@
       "name": "Deduplicate Leads",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1300, 400],
+      "position": [1080, 400],
       "parameters": {
-        "jsCode": "const all = $input.item.json.leads || [];\nconst seen = new Set();\nconst unique = [];\nconst today = new Date().toISOString().split('T')[0];\n\nfor (const lead of all) {\n  if (lead._skip || !lead.domain) continue;\n  if (seen.has(lead.domain)) continue;\n  seen.add(lead.domain);\n  unique.push({ ...lead, date_found: today });\n}\n\nreturn unique.map(l => ({ json: l }));"
+        "mode": "runOnceForAllItems",
+        "jsCode": "const seen = new Set();\nconst unique = [];\nconst today = new Date().toISOString().split('T')[0];\n\nfor (const item of $input.all()) {\n  const lead = item.json;\n  if (lead._skip || !lead.domain) continue;\n  if (seen.has(lead.domain)) continue;\n  seen.add(lead.domain);\n  unique.push({ ...lead, date_found: today });\n}\n\nreturn unique.map(l => ({ json: l }));"
       }
     },
     {
@@ -79,7 +70,7 @@
       "name": "Append to Google Sheets",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.4,
-      "position": [1520, 400],
+      "position": [1300, 400],
       "parameters": {
         "operation": "append",
         "documentId": {
@@ -125,9 +116,6 @@
       "main": [[{ "node": "Parse & Filter Results", "type": "main", "index": 0 }]]
     },
     "Parse & Filter Results": {
-      "main": [[{ "node": "Aggregate All Results", "type": "main", "index": 0 }]]
-    },
-    "Aggregate All Results": {
       "main": [[{ "node": "Deduplicate Leads", "type": "main", "index": 0 }]]
     },
     "Deduplicate Leads": {
@@ -136,7 +124,7 @@
   },
   "active": false,
   "settings": { "executionOrder": "v1" },
-  "versionId": "h3i9j7k5-2l4m-4n6o-7p8q-9r0s1t2u3v4w",
+  "versionId": "i4j0k8l6-3m5n-4o7p-8q9r-0s1t2u3v4w5x",
   "meta": { "templateCredsSetupCompleted": true, "instanceId": "shopify-bfsg-finder" },
   "id": "shopify-bfsg-lead-finder-v1",
   "tags": [
