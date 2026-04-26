@@ -1,0 +1,307 @@
+{
+  "name": "Shopify BfSG Compliance – Lead Finder (Step 1)",
+  "nodes": [
+    {
+      "id": "a1b2c3d4-e5f6-4a7b-8c9d-e0f1a2b3c4d5",
+      "name": "Setup Instructions",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [200, 80],
+      "parameters": {
+        "width": 720,
+        "height": 300,
+        "color": 5,
+        "content": "## Shopify BfSG Compliance – Lead Finder (Step 1)\n\nFinds German Shopify stores, scrapes their homepage + Impressum, extracts emails, and writes results to Google Sheets.\n\n### Required n8n Variables (Settings → Variables)\n\n| Variable | Description | Where to get it |\n|---|---|---|\n| `SERP_API_KEY` | Google search via SerpAPI | [serpapi.com](https://serpapi.com) – free: 100 searches/month |\n| `FIRECRAWL_API_KEY` | Website scraping | [firecrawl.dev](https://firecrawl.dev) |\n| `GOOGLE_SHEET_ID` | Target spreadsheet | From Sheet URL: `spreadsheets/d/{ID}/edit` |\n\n### Google Sheet Setup\nCreate a sheet tab named **Leads** with these column headers (row 1):\n`Company Name` · `Domain` · `URL` · `Email` · `All Emails` · `Has Accessibility Statement` · `BfSG Compliant` · `Date Found` · `Source`\n\nAlso connect a **Google Sheets OAuth2 credential** to the *Append to Google Sheets* node."
+      }
+    },
+    {
+      "id": "b2c3d4e5-f6a7-4b8c-9d0e-f1a2b3c4d5e6",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [200, 440],
+      "parameters": {}
+    },
+    {
+      "id": "c3d4e5f6-a7b8-4c9d-0e1f-a2b3c4d5e6f7",
+      "name": "Define Search Queries",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [420, 440],
+      "parameters": {
+        "jsCode": "// Google search queries to discover German Shopify stores.\n// Multiple variations improve coverage across different page types.\nconst queries = [\n  '\"powered by shopify\" site:.de',\n  '\"powered by shopify\" impressum site:.de',\n  'shopify online shop deutschland impressum GmbH site:.de',\n  'shopify store impressum site:.de -myshopify.com'\n];\n\nreturn queries.map((query, idx) => ({ json: { query, idx } }));"
+      }
+    },
+    {
+      "id": "d4e5f6a7-b8c9-4d0e-1f2a-b3c4d5e6f7a8",
+      "name": "SerpAPI: Search Shopify Stores",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [640, 440],
+      "parameters": {
+        "method": "GET",
+        "url": "https://serpapi.com/search",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "q",       "value": "={{ $json.query }}" },
+            { "name": "api_key", "value": "={{ $vars.SERP_API_KEY }}" },
+            { "name": "engine",  "value": "google" },
+            { "name": "gl",      "value": "de" },
+            { "name": "hl",      "value": "de" },
+            { "name": "num",     "value": "100" }
+          ]
+        },
+        "options": { "continueOnFail": true }
+      }
+    },
+    {
+      "id": "e5f6a7b8-c9d0-4e1f-2a3b-c4d5e6f7a8b9",
+      "name": "Parse SerpAPI Results",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [860, 440],
+      "parameters": {
+        "jsCode": "const response = $input.item.json;\n\nconst SKIP_DOMAINS = [\n  'myshopify.com', 'shopify.com', 'reddit.com', 'youtube.com', 'wikipedia.org',\n  'twitter.com', 'facebook.com', 'instagram.com', 'linkedin.com', 'xing.com',\n  'google.com', 'amazon.de', 'ebay.de', 'otto.de', 'zalando.de'\n];\n\nconst items = [];\nconst seen = new Set();\n\nfor (const result of (response.organic_results || [])) {\n  if (!result.link) continue;\n  try {\n    const u = new URL(result.link);\n    const domain = u.hostname.replace(/^www\\./, '');\n    // Only .de domains, skip known platforms\n    if (!domain.endsWith('.de')) continue;\n    if (SKIP_DOMAINS.some(s => domain.includes(s))) continue;\n    if (seen.has(domain)) continue;\n    seen.add(domain);\n    items.push({\n      json: {\n        domain,\n        url: `https://${domain}`,\n        title: result.title || '',\n        snippet: result.snippet || ''\n      }\n    });\n  } catch (_) {}\n}\n\nreturn items.length ? items : [{ json: { _skip: true } }];"
+      }
+    },
+    {
+      "id": "f6a7b8c9-d0e1-4f2a-3b4c-d5e6f7a8b9c0",
+      "name": "Aggregate All URLs",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [1080, 440],
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "companies",
+        "options": {}
+      }
+    },
+    {
+      "id": "a7b8c9d0-e1f2-4a3b-4c5d-e6f7a8b9c0d1",
+      "name": "Deduplicate Companies",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1300, 440],
+      "parameters": {
+        "jsCode": "const all = $input.item.json.companies || [];\nconst seen = new Set();\nconst unique = [];\n\nfor (const c of all) {\n  if (c._skip || !c.domain) continue;\n  if (!seen.has(c.domain)) {\n    seen.add(c.domain);\n    unique.push(c);\n  }\n}\n\nconsole.log(`Found ${unique.length} unique German Shopify domains to enrich`);\nreturn unique.map(c => ({ json: c }));"
+      }
+    },
+    {
+      "id": "b8c9d0e1-f2a3-4b4c-5d6e-f7a8b9c0d1e2",
+      "name": "Split for Enrichment",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [1520, 440],
+      "parameters": {
+        "batchSize": 3,
+        "options": {}
+      }
+    },
+    {
+      "id": "c9d0e1f2-a3b4-4c5d-6e7f-a8b9c0d1e2f3",
+      "name": "Firecrawl: Scrape Homepage",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1740, 320],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.firecrawl.dev/v1/scrape",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $vars.FIRECRAWL_API_KEY }}" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ url: $json.url, formats: ['markdown'], onlyMainContent: false, timeout: 30000 }) }}",
+        "options": { "continueOnFail": true, "timeout": 45000 }
+      }
+    },
+    {
+      "id": "d0e1f2a3-b4c5-4d6e-7f8a-b9c0d1e2f3a4",
+      "name": "Merge Homepage Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1960, 320],
+      "parameters": {
+        "jsCode": "// Merge Firecrawl homepage response with the original company data.\n// $('Split for Enrichment').item.json gives us the paired input item.\nconst scraped = $input.item.json;\nconst original = $('Split for Enrichment').item.json;\n\nreturn [{\n  json: {\n    ...original,\n    homepage_markdown: scraped.data?.markdown || scraped.markdown || '',\n    homepage_title: scraped.data?.metadata?.title || original.title || ''\n  }\n}];"
+      }
+    },
+    {
+      "id": "e1f2a3b4-c5d6-4e7f-8a9b-c0d1e2f3a4b5",
+      "name": "Firecrawl: Scrape Impressum",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2180, 320],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.firecrawl.dev/v1/scrape",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $vars.FIRECRAWL_API_KEY }}" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ url: $json.url + '/impressum', formats: ['markdown'], onlyMainContent: false, timeout: 30000 }) }}",
+        "options": { "continueOnFail": true, "timeout": 45000 }
+      }
+    },
+    {
+      "id": "f2a3b4c5-d6e7-4f8a-9b0c-d1e2f3a4b5c6",
+      "name": "Extract Company Info & Emails",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2400, 320],
+      "parameters": {
+        "jsCode": "const impressumScraped = $input.item.json;\nconst mergedData = $('Merge Homepage Data').item.json;\n\nconst impressumMd = impressumScraped.data?.markdown || impressumScraped.markdown || '';\nconst fullText = (mergedData.homepage_markdown || '') + '\\n' + impressumMd;\n\n// Extract all email addresses via regex\nconst emailRe = /[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,6}/g;\nconst rawEmails = fullText.match(emailRe) || [];\nconst emails = [...new Set(rawEmails)].filter(e => {\n  const l = e.toLowerCase();\n  return !l.includes('example') &&\n         !l.includes('yourdomain') &&\n         !l.endsWith('.png') &&\n         !l.endsWith('.jpg') &&\n         !l.endsWith('.gif') &&\n         !l.includes('schema.org') &&\n         !l.includes('sentry.io') &&\n         !l.includes('w3.org') &&\n         !l.includes('googleapis.com');\n});\n\n// Prefer generic contact addresses over personal ones\nconst PRIORITY_LOCALS = [\n  'info', 'kontakt', 'contact', 'hallo', 'hello',\n  'service', 'support', 'office', 'mail', 'post', 'team', 'anfrage', 'bestellung'\n];\nconst priority = emails.filter(e =>\n  PRIORITY_LOCALS.includes(e.split('@')[0].toLowerCase())\n);\nconst email = priority[0] || emails[0] || '';\n\n// BfSG / accessibility compliance signals\nconst lower = fullText.toLowerCase();\nconst hasAccessibilityStatement =\n  lower.includes('barrierefreiheitserklärung') ||\n  lower.includes('erklärung zur barrierefreiheit') ||\n  lower.includes('accessibility statement') ||\n  lower.includes('bfsg') ||\n  (lower.includes('barrierefreiheit') && lower.includes('wcag'));\n\n// Try to extract legal company name from Impressum (German legal page)\nconst legalRe = /([A-ZÄÖÜ][^\\n]{2,60}(?:GmbH|AG|UG|KG|OHG|GbR|e\\.K\\.|SE|GmbH & Co\\. KG))/;\nconst legalMatch = impressumMd.match(legalRe);\nconst companyName = legalMatch\n  ? legalMatch[1].trim()\n  : (mergedData.homepage_title || mergedData.domain);\n\nreturn [{\n  json: {\n    company_name: companyName,\n    domain: mergedData.domain,\n    url: mergedData.url,\n    email,\n    all_emails: emails.slice(0, 5).join(', '),\n    has_accessibility_statement: hasAccessibilityStatement,\n    bfsg_compliant: hasAccessibilityStatement ? 'Possibly' : 'Likely No',\n    date_found: new Date().toISOString().split('T')[0],\n    source: 'SerpAPI + Firecrawl'\n  }\n}];"
+      }
+    },
+    {
+      "id": "a3b4c5d6-e7f8-4a9b-0c1d-e2f3a4b5c6d7",
+      "name": "Has Email?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [2620, 320],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "email-check",
+              "leftValue": "={{ $json.email }}",
+              "rightValue": "",
+              "operator": { "type": "string", "operation": "notEmpty" }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "b4c5d6e7-f8a9-4b0c-1d2e-f3a4b5c6d7e8",
+      "name": "Append to Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.4,
+      "position": [2840, 200],
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $vars.GOOGLE_SHEET_ID }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Leads",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Company Name":              "={{ $json.company_name }}",
+            "Domain":                    "={{ $json.domain }}",
+            "URL":                       "={{ $json.url }}",
+            "Email":                     "={{ $json.email }}",
+            "All Emails":                "={{ $json.all_emails }}",
+            "Has Accessibility Statement": "={{ $json.has_accessibility_statement }}",
+            "BfSG Compliant":            "={{ $json.bfsg_compliant }}",
+            "Date Found":                "={{ $json.date_found }}",
+            "Source":                    "={{ $json.source }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "1",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "id": "c5d6e7f8-a9b0-4c1d-2e3f-a4b5c6d7e8f9",
+      "name": "No Email – Skip",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [2840, 540],
+      "parameters": {}
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [[{ "node": "Define Search Queries", "type": "main", "index": 0 }]]
+    },
+    "Define Search Queries": {
+      "main": [[{ "node": "SerpAPI: Search Shopify Stores", "type": "main", "index": 0 }]]
+    },
+    "SerpAPI: Search Shopify Stores": {
+      "main": [[{ "node": "Parse SerpAPI Results", "type": "main", "index": 0 }]]
+    },
+    "Parse SerpAPI Results": {
+      "main": [[{ "node": "Aggregate All URLs", "type": "main", "index": 0 }]]
+    },
+    "Aggregate All URLs": {
+      "main": [[{ "node": "Deduplicate Companies", "type": "main", "index": 0 }]]
+    },
+    "Deduplicate Companies": {
+      "main": [[{ "node": "Split for Enrichment", "type": "main", "index": 0 }]]
+    },
+    "Split for Enrichment": {
+      "main": [
+        [{ "node": "Firecrawl: Scrape Homepage", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "Firecrawl: Scrape Homepage": {
+      "main": [[{ "node": "Merge Homepage Data", "type": "main", "index": 0 }]]
+    },
+    "Merge Homepage Data": {
+      "main": [[{ "node": "Firecrawl: Scrape Impressum", "type": "main", "index": 0 }]]
+    },
+    "Firecrawl: Scrape Impressum": {
+      "main": [[{ "node": "Extract Company Info & Emails", "type": "main", "index": 0 }]]
+    },
+    "Extract Company Info & Emails": {
+      "main": [[{ "node": "Has Email?", "type": "main", "index": 0 }]]
+    },
+    "Has Email?": {
+      "main": [
+        [{ "node": "Append to Google Sheets", "type": "main", "index": 0 }],
+        [{ "node": "No Email – Skip",         "type": "main", "index": 0 }]
+      ]
+    },
+    "Append to Google Sheets": {
+      "main": [[{ "node": "Split for Enrichment", "type": "main", "index": 0 }]]
+    },
+    "No Email – Skip": {
+      "main": [[{ "node": "Split for Enrichment", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "c8f4e2a1-9b3d-4f5c-8e7a-1d2b3c4e5f6a",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "shopify-bfsg-finder"
+  },
+  "id": "shopify-bfsg-lead-finder-v1",
+  "tags": [
+    { "id": "tag-bfsg",    "name": "BfSG Compliance" },
+    { "id": "tag-shopify", "name": "Shopify" }
+  ]
+}
